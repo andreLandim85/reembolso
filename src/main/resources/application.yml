@@ -1,0 +1,32 @@
+quarkus:
+  datasource:
+    db-kind: h2
+    jdbc:
+      url: jdbc:h2:mem:default;DB_CLOSE_DELAY=-1
+      driver: org.h2.Driver
+    username: sa
+    password: sa
+
+  hibernate-orm:
+    schema-management:
+      strategy: drop-and-create
+      create-schemas: true
+    sql-load-script: no-file
+  oidc:
+    authentication:
+      redirect-path: /callback
+    # URL do User Pool (issuer)
+    auth-server-url: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_UdO9SF2dY
+    # Client ID e secret do App client Cognito
+    client-id: 2cdjagd9aavp7f45n7is71ntvn
+    credentials:
+      secret: <client-secret>
+    # Tipo de aplicação (fluxo web)
+    application-type: web-app
+    # Audience esperado no token ID
+    token:
+      audience: 2cdjagd9aavp7f45n7is71ntvn
+    # Mapeia grupos Cognito para @RolesAllowed
+    roles:
+      source: accesstoken
+      claim: cognito:groups

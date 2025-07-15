@@ -1,0 +1,8 @@
+datasource:
+  db-kind: postgresql
+  username: SA
+  password: SA
+  jdbc:
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;MODE=PostgreSQL;AUTO_SERVER=FALSE;INIT=CREATE
+      domain IF NOT EXISTS jsonb AS other
+    driver: org.h2.Driver      # acess�vel em http://localhost:8080/h2o banco

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Home</title></head>
+<body>
+{#if isAuthenticated}
+    <h1>Olá, {userName}!</h1>
+    <p><a href="/logout">Sair</a></p>
+{#else}
+    <h1>Bem-vindo!</h1>
+    <a href="/oauth2/authorization/default">Login</a>
+{/if}
+</body>
+</html>
