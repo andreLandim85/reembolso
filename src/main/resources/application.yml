@@ -13,16 +13,17 @@ quarkus:
       create-schemas: true
     sql-load-script: no-file
   oidc:
-    authentication:
-      redirect-path: /callback
     # URL do User Pool (issuer)
     auth-server-url: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_UdO9SF2dY
     # Client ID e secret do App client Cognito
     client-id: 2cdjagd9aavp7f45n7is71ntvn
     credentials:
-      secret: <client-secret>
+      secret: 1n6r3me4ldar0j43t8bsds0bhpg204te0j6totoakfde0l65tgv9
     # Tipo de aplicação (fluxo web)
     application-type: web-app
+    authorization-path: /oauth2/authorization
+    authentication:
+      redirect-path: /callback
     # Audience esperado no token ID
     token:
       audience: 2cdjagd9aavp7f45n7is71ntvn
@@ -30,3 +31,8 @@ quarkus:
     roles:
       source: accesstoken
       claim: cognito:groups
+
+  http:
+    cors:
+      origins: "http://localhost:5173"
+      methods: GET,POST,PUT,DELETE

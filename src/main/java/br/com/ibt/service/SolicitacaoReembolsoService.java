@@ -1,6 +1,5 @@
 package br.com.ibt.service;
 
-import br.com.ibt.entity.Aprovacao;
 import br.com.ibt.entity.DocumentoAnexo;
 import br.com.ibt.entity.Pagamento;
 import br.com.ibt.entity.SolicitacaoReembolso;
@@ -22,12 +21,12 @@ public class SolicitacaoReembolsoService {
         return s;
     }
 
-    public List<SolicitacaoReembolso> listarMinhasSolicitacoes(Long membroId) {
-        return SolicitacaoReembolso.list("membroId", membroId);
+    public List<SolicitacaoReembolso> listarSolicitacoes() {
+        return SolicitacaoReembolso.listAll();
     }
 
     @Transactional
-    public SolicitacaoReembolso anexarNotaFiscal(Long id, String urlNota, String chavePix) {
+    public SolicitacaoReembolso atualizarSolicitacao(Long id, String urlNota, String chavePix) {
         SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
         if (s != null && s.status == SolicitacaoReembolso.Status.APROVADA) {
             DocumentoAnexo anexo = new DocumentoAnexo();
@@ -41,77 +40,32 @@ public class SolicitacaoReembolsoService {
         return s;
     }
 
-    public List<SolicitacaoReembolso> listarParaAprovacao() {
-        return SolicitacaoReembolso.list("status", SolicitacaoReembolso.Status.PENDENTE);
-    }
-
     @Transactional
-    public SolicitacaoReembolso aprovarSolicitacao(Long id, String pastorId, String justificativa) {
+    public SolicitacaoReembolso definirStatus(Long id, SolicitacaoReembolso.Status status, String justificativa) {
         SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
-        if (s != null && s.status == SolicitacaoReembolso.Status.PENDENTE) {
-            s.status = SolicitacaoReembolso.Status.APROVADA;
+        if (s != null) {
+            s.status = status;
             s.persist();
-            Aprovacao a = new Aprovacao();
-            a.solicitacaoId = id;
-            a.aprovadorId = pastorId;
-            a.aprovado = true;
-            a.justificativa = justificativa;
-            a.persist();
         }
         return s;
     }
 
     @Transactional
-    public SolicitacaoReembolso rejeitarSolicitacao(Long id, String pastorId, String justificativa) {
-        SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
-        if (s != null && s.status == SolicitacaoReembolso.Status.PENDENTE) {
-            s.status = SolicitacaoReembolso.Status.REJEITADA;
-            s.persist();
-            Aprovacao a = new Aprovacao();
-            a.solicitacaoId = id;
-            a.aprovadorId = pastorId;
-            a.aprovado = false;
-            a.justificativa = justificativa;
-            a.persist();
-        }
-        return s;
-    }
-
-    public List<SolicitacaoReembolso> listarParaPagamento() {
-        return SolicitacaoReembolso.list("status", SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO);
-    }
-
-    @Transactional
-    public SolicitacaoReembolso executarPagamento(Long id, String tesoureiroId, String urlComprovante) {
+    public SolicitacaoReembolso processarPagamento(Long id, String tesoureiroId, String urlComprovante, boolean aprovado) {
         SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
         if (s != null && s.status == SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO) {
             Pagamento p = new Pagamento();
             p.solicitacaoId = id;
             p.tesoureiroId = tesoureiroId;
-            p.concluido = true;
+            p.concluido = aprovado;
+            p.justificativa = aprovado ? null : "Rejeitado";
             p.persist();
             DocumentoAnexo anexo = new DocumentoAnexo();
             anexo.solicitacaoId = id;
-            anexo.tipo = DocumentoAnexo.Tipo.COMPROVANTE_PAGAMENTO;
+            anexo.tipo = aprovado ? DocumentoAnexo.Tipo.COMPROVANTE_PAGAMENTO : DocumentoAnexo.Tipo.NOTA_FISCAL;
             anexo.url = urlComprovante;
             anexo.persist();
-            s.status = SolicitacaoReembolso.Status.CONCLUIDA;
-            s.persist();
-        }
-        return s;
-    }
-
-    @Transactional
-    public SolicitacaoReembolso rejeitarPagamento(Long id, String tesoureiroId, String justificativa) {
-        SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
-        if (s != null && s.status == SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO) {
-            Pagamento p = new Pagamento();
-            p.solicitacaoId = id;
-            p.tesoureiroId = tesoureiroId;
-            p.concluido = false;
-            p.justificativa = justificativa;
-            p.persist();
-            s.status = SolicitacaoReembolso.Status.REJEITADA;
+            s.status = aprovado ? SolicitacaoReembolso.Status.CONCLUIDA : SolicitacaoReembolso.Status.REJEITADA;
             s.persist();
         }
         return s;
