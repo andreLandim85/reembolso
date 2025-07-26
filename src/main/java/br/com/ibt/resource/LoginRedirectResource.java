@@ -62,7 +62,6 @@ public class LoginRedirectResource {
                 "https://%s/logout?client_id=%s&logout_uri=%s",
                 cognitoDomain, clientId, redirectUri
         );
-
         // Redireciona para o logout do Cognito
         return Response.seeOther(URI.create(cognitoLogoutUrl)).build();
     }
