@@ -1,19 +1,38 @@
 package br.com.ibt.service;
 
 import br.com.ibt.entity.DocumentoAnexo;
+import br.com.ibt.entity.Membro;
 import br.com.ibt.entity.Pagamento;
 import br.com.ibt.entity.SolicitacaoReembolso;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @ApplicationScoped
 public class SolicitacaoReembolsoService {
 
-    public SolicitacaoReembolso criarSolicitacao(Long membroId, String descricao, Double valor) {
+    public SolicitacaoReembolso criarSolicitacao(String descricao, Double valor, String nome, String telefone, String email) {
+        Membro m = Membro.buscarPorCampos(nome, email, telefone);
+        if (m == null) {
+            m = new Membro();
+            m.nome = nome;
+            m.email = email;
+            m.telefone = telefone;
+            m.persist();
+            Log.debug("Novo membro salvo!");
+        } else {
+            Log.debug("Membro já existente!");
+        }
+
         SolicitacaoReembolso s = new SolicitacaoReembolso();
-        s.membroId = membroId;
+        s.membro = m;
         s.descricao = descricao;
         s.valor = valor;
         s.status = SolicitacaoReembolso.Status.PENDENTE;
@@ -21,8 +40,9 @@ public class SolicitacaoReembolsoService {
         return s;
     }
 
-    public List<SolicitacaoReembolso> listarSolicitacoes() {
-        return SolicitacaoReembolso.listAll();
+    @Transactional
+    public  SolicitacaoReembolso buscarPorId(Long id) {
+        return SolicitacaoReembolso.findById(id);
     }
 
     @Transactional
@@ -35,6 +55,7 @@ public class SolicitacaoReembolsoService {
             anexo.url = urlNota;
             anexo.persist();
             s.status = SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO;
+            s.chavePix = chavePix;
             s.persist();
         }
         return s;
@@ -45,6 +66,7 @@ public class SolicitacaoReembolsoService {
         SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
         if (s != null) {
             s.status = status;
+            s.justificativa = justificativa;
             s.persist();
         }
         return s;
@@ -69,5 +91,57 @@ public class SolicitacaoReembolsoService {
             s.persist();
         }
         return s;
+    }
+
+    @Transactional
+    public List<SolicitacaoReembolso> listarPendentes() {
+        return SolicitacaoReembolso.list("status", SolicitacaoReembolso.Status.PENDENTE);
+    }
+
+    @Transactional
+    public List<SolicitacaoReembolso> listarUltimasPorMembro(Long membroId) {
+        return SolicitacaoReembolso.find("membro.id = ?1 ORDER BY dataCriacao DESC", membroId)
+                .page(0, 10)
+                .list();
+    }
+
+    public List<SolicitacaoReembolso> listarAguardandoPagamentoMock() {
+        List<SolicitacaoReembolso> lista = new ArrayList<>();
+        for (int i = 1; i <= 3; i++) {
+            SolicitacaoReembolso s = new SolicitacaoReembolso();
+            s.id = (long) i;
+            s.membro = new Membro();
+            s.membro.nome = "Membro " + i;
+            s.descricao = "Compra X " + i;
+            s.dataCriacao = LocalDateTime.now().minusDays(i);
+            s.valor = 99.99 + i;
+            s.aprovador = new Membro();
+            s.aprovador.nome = "Pastor " + i;
+            s.dataAprovacao = LocalDateTime.now().minusDays(i - 1);
+            s.tipoChave = "CPF";
+            s.chavePix = "123.456.789-0" + i;
+            s.status = SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO;
+            lista.add(s);
+        }
+        return lista;
+    }
+
+    @Transactional
+    public List<SolicitacaoReembolso> listarAguardandoPagamento() {
+        return SolicitacaoReembolso.list("status", SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO);
+    }
+
+    @Transactional
+    public void anexarNotaFiscal(Long id, byte[] nota, String nome, String tipo, String chavePix, String tipoChavePix) {
+        SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
+        if (s != null) {
+            s.notaFiscal = nota;
+            s.notaFiscalNome = nome;
+            s.notaFiscalTipo = tipo;
+            s.chavePix = chavePix;
+            s.tipoChave = tipoChavePix;
+            s.status = SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO;
+            s.persist();
+        }
     }
 }

@@ -1,0 +1,23 @@
+-- -- Cria um schema customizado (opcional)
+-- CREATE SCHEMA IF NOT EXISTS ibt;
+--
+-- -- Cria um usuário customizado (opcional)
+-- CREATE USER meuusuario WITH PASSWORD 'senhasecreta';
+--
+-- -- Dá permissões ao usuário customizado
+-- GRANT ALL PRIVILEGES ON SCHEMA ibt TO meuusuario;
+--
+-- -- Cria uma tabela no schema
+-- CREATE TABLE IF NOT EXISTS ibt.solicitacaoreembolso (
+--     id BIGINT PRIMARY KEY DEFAULT nextval('SolicitacaoReembolso_SEQ'),
+--     membro_id BIGINT,
+--     descricao TEXT,
+--     valor NUMERIC(12,2),
+--     status VARCHAR(32),
+--     data_criacao TIMESTAMP
+--     );
+--
+-- -- Permite que o usuário acesse a tabela
+-- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ibt TO meuusuario;
+--
+-- CREATE SEQUENCE IF NOT EXISTS "SolicitacaoReembolso_SEQ" START WITH 1 INCREMENT BY 1;
