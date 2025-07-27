@@ -232,7 +232,8 @@ public class SolicitacaoReembolsoQuteResource {
         String nome = principal.getClaim("name");
         String telefone = principal.getClaim("phone_number");
         String email = principal.getClaim("email");
-        return Membro.buscarPorCampos(nome, email, telefone);
+
+        return service.getMembro(nome, telefone, email);
     }
 
     private String obterNomeMembro() {

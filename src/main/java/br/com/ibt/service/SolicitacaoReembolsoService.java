@@ -19,6 +19,26 @@ import java.util.List;
 public class SolicitacaoReembolsoService {
 
     public SolicitacaoReembolso criarSolicitacao(String descricao, Double valor, String nome, String telefone, String email) {
+        Membro m = getMembro(nome, telefone, email);
+
+        SolicitacaoReembolso s = new SolicitacaoReembolso();
+        s.membro = m;
+        s.descricao = descricao;
+        s.valor = valor;
+        s.status = SolicitacaoReembolso.Status.PENDENTE;
+        s.persist();
+        return s;
+    }
+
+    /**
+     * Busca um membro na base. Cria um novo registro caso não encontre
+     * @param nome
+     * @param telefone
+     * @param email
+     * @return
+     */
+    @Transactional
+    public static Membro getMembro(String nome, String telefone, String email) {
         Membro m = Membro.buscarPorCampos(nome, email, telefone);
         if (m == null) {
             m = new Membro();
@@ -30,14 +50,7 @@ public class SolicitacaoReembolsoService {
         } else {
             Log.debug("Membro já existente!");
         }
-
-        SolicitacaoReembolso s = new SolicitacaoReembolso();
-        s.membro = m;
-        s.descricao = descricao;
-        s.valor = valor;
-        s.status = SolicitacaoReembolso.Status.PENDENTE;
-        s.persist();
-        return s;
+        return m;
     }
 
     @Transactional
