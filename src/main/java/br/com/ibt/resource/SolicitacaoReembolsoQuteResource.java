@@ -66,6 +66,7 @@ public class SolicitacaoReembolsoQuteResource {
                                  @FormParam("descricao") String descricao,
                                  @FormParam("valor") String valor) {
         try {
+            Membro m = obterMembro();
             double valorNum = Double.parseDouble(valor.replace(',', '.'));
             var principal = (OidcJwtCallerPrincipal) identity.getPrincipal();
             String nome = principal.getClaim("name");
@@ -76,13 +77,17 @@ public class SolicitacaoReembolsoQuteResource {
             service.criarSolicitacao(descricao, valorNum, nome, telefone, email);
             List<SolicitacaoReembolso> solicitacoes = service.listarUltimasPorMembro(membroId);
             return solicitarReembolso
+                    .data("username", m.nome)
                     .data("solicitacoes", solicitacoes)
                     .data("mensagem", "Solicitação enviada com sucesso!")
                     .data("descricaoPreenchida", "")
                     .data("valorPreenchido", "");
         } catch (Exception ex) {
+            Membro m = obterMembro();
             List<SolicitacaoReembolso> solicitacoes = service.listarUltimasPorMembro(membroId);
             return solicitarReembolso
+
+                    .data("username", m.nome)
                     .data("solicitacoes", solicitacoes)
                     .data("mensagem", "Erro ao enviar: " + ex.getMessage())
                     .data("descricaoPreenchida", descricao)
@@ -111,7 +116,8 @@ public class SolicitacaoReembolsoQuteResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance aprovar(@FormParam("id") Long id) {
-        service.definirStatus(id, SolicitacaoReembolso.Status.APROVADA,null);
+        Membro m = obterMembro();
+        service.definirStatus(id, SolicitacaoReembolso.Status.APROVADA,null, m);
         // Após aprovar, volta pra tela de pendentes
         List<SolicitacaoReembolso> pendentes = service.listarPendentes();
         return aprovarRejeitarSolicitacao.data("pendentes", pendentes)
@@ -136,7 +142,8 @@ public class SolicitacaoReembolsoQuteResource {
                     .data("rejeitarId", id)
                     .data("msg", null);
         }
-        service.definirStatus(id, SolicitacaoReembolso.Status.REJEITADA,justificativa);
+        Membro m = obterMembro();
+        service.definirStatus(id, SolicitacaoReembolso.Status.REJEITADA,justificativa, m);
         List<SolicitacaoReembolso> pendentes = service.listarPendentes();
         return aprovarRejeitarSolicitacao.data("pendentes", pendentes)
                 .data("username", obterNomeMembro())
@@ -239,5 +246,25 @@ public class SolicitacaoReembolsoQuteResource {
     private String obterNomeMembro() {
         Membro m = obterMembro();
         return m.nome;
+    }
+
+    @POST
+    @Path("/{id}/executar")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Transactional
+    public Response executarPagamento(
+            @PathParam("id") Long id) {
+
+        SolicitacaoReembolso s = service.buscarPorId(id);
+        if (s == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        Membro m = obterMembro();
+        service.processarPagamento(id, m, SolicitacaoReembolso.Status.CONCLUIDA);
+
+        // Redirecionamento
+        return Response
+                .seeOther(java.net.URI.create("/solicitar-reembolso"))
+                .build();
     }
 }

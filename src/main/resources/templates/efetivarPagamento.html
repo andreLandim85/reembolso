@@ -78,7 +78,7 @@
             <td>R$ {p.valor}</td>
 
             <td class="text-center" rowspan="2" style="vertical-align:middle;">
-              <form method="post" action="/solicitar-reembolso/executar" class="d-inline">
+              <form method="post" action="/solicitar-reembolso/{p.id}/executar" class="d-inline">
                 <input type="hidden" name="id" value="{p.id}">
                 <button type="submit" class="btn btn-success btn-action btn-sm" title="Confirmar pagamento">
                   <i class="bi bi-check-circle"></i> Executar
@@ -89,7 +89,7 @@
                 <i class="bi bi-x-circle"></i> Rejeitar
               </button>
               <!-- Form Justificativa -->
-              <form method="post" action="/solicitar-reembolso/rejeitar-pagamento" id="form-justificativa-{p.id}"
+              <form method="post" action="/solicitar-reembolso/{p.id}/rejeitar-pagamento" id="form-justificativa-{p.id}"
                     class="form-justificativa mt-2">
                 <input type="hidden" name="id" value="{p.id}">
                 <div class="input-group input-group-sm">

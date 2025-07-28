@@ -25,6 +25,11 @@ public class SolicitacaoReembolso extends PanacheEntity {
     @ManyToOne
     @JoinColumn(name = "aprovador_id")
     public Membro aprovador;
+
+    @ManyToOne
+    @JoinColumn(name = "tesoureiro_aprovador_id")
+    public Membro tesoureiroAprovador;
+
     public LocalDateTime dataAprovacao;
     public String tipoChave;
     @Lob
@@ -39,6 +44,14 @@ public class SolicitacaoReembolso extends PanacheEntity {
 
     public void setAprovador(Membro aprovador) {
         this.aprovador = aprovador;
+    }
+
+    public Membro getTesoureiroAprovador() {
+        return tesoureiroAprovador;
+    }
+
+    public void setTesoureiroAprovador(Membro tesoureiroAprovador) {
+        this.tesoureiroAprovador = tesoureiroAprovador;
     }
 
     public String getDataCriacaoFormatada() {
@@ -57,6 +70,7 @@ public class SolicitacaoReembolso extends PanacheEntity {
         APROVADA,
         REJEITADA,
         AGUARDANDO_PAGAMENTO,
-        CONCLUIDA
+        CONCLUIDA,
+        PAGAMENTO_REJEITADO
     }
 }

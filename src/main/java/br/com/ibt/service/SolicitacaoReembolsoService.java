@@ -75,32 +75,23 @@ public class SolicitacaoReembolsoService {
     }
 
     @Transactional
-    public SolicitacaoReembolso definirStatus(Long id, SolicitacaoReembolso.Status status, String justificativa) {
+    public SolicitacaoReembolso definirStatus(Long id, SolicitacaoReembolso.Status status, String justificativa, Membro m) {
         SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
         if (s != null) {
             s.status = status;
             s.justificativa = justificativa;
+            s.aprovador = m;
             s.persist();
         }
         return s;
     }
 
     @Transactional
-    public SolicitacaoReembolso processarPagamento(Long id, String tesoureiroId, String urlComprovante, boolean aprovado) {
+    public SolicitacaoReembolso processarPagamento(Long id, Membro tesoureiro, SolicitacaoReembolso.Status aprovado) {
         SolicitacaoReembolso s = SolicitacaoReembolso.findById(id);
         if (s != null && s.status == SolicitacaoReembolso.Status.AGUARDANDO_PAGAMENTO) {
-            Pagamento p = new Pagamento();
-            p.solicitacaoId = id;
-            p.tesoureiroId = tesoureiroId;
-            p.concluido = aprovado;
-            p.justificativa = aprovado ? null : "Rejeitado";
-            p.persist();
-            DocumentoAnexo anexo = new DocumentoAnexo();
-            anexo.solicitacaoId = id;
-            anexo.tipo = aprovado ? DocumentoAnexo.Tipo.COMPROVANTE_PAGAMENTO : DocumentoAnexo.Tipo.NOTA_FISCAL;
-            anexo.url = urlComprovante;
-            anexo.persist();
-            s.status = aprovado ? SolicitacaoReembolso.Status.CONCLUIDA : SolicitacaoReembolso.Status.REJEITADA;
+                s.status = aprovado ;
+                s.setTesoureiroAprovador(tesoureiro);
             s.persist();
         }
         return s;
