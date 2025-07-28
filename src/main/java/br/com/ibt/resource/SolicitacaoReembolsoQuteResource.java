@@ -35,11 +35,8 @@ public class SolicitacaoReembolsoQuteResource {
 
     @Inject
     SecurityIdentity identity;
-
-
     @Inject
     SolicitacaoReembolsoService service;
-
 
     @RolesAllowed({"Membro", "Admin"})
     @GET
@@ -48,13 +45,12 @@ public class SolicitacaoReembolsoQuteResource {
         Membro m = obterMembro();
         List<SolicitacaoReembolso> solicitacoes = service.listarUltimasPorMembro(m.id);
         return solicitarReembolso
-                .data("username", m.nome)
+                .data("username", obterNomeMembro())
                 .data("solicitacoes", solicitacoes)
                 .data("mensagem", null)
                 .data("descricaoPreenchida", null)
                 .data("valorPreenchido", null);
     }
-
 
 
     @POST
@@ -66,7 +62,6 @@ public class SolicitacaoReembolsoQuteResource {
                                  @FormParam("descricao") String descricao,
                                  @FormParam("valor") String valor) {
         try {
-            Membro m = obterMembro();
             double valorNum = Double.parseDouble(valor.replace(',', '.'));
             var principal = (OidcJwtCallerPrincipal) identity.getPrincipal();
             String nome = principal.getClaim("name");
@@ -77,17 +72,16 @@ public class SolicitacaoReembolsoQuteResource {
             service.criarSolicitacao(descricao, valorNum, nome, telefone, email);
             List<SolicitacaoReembolso> solicitacoes = service.listarUltimasPorMembro(membroId);
             return solicitarReembolso
-                    .data("username", m.nome)
+                    .data("username", obterNomeMembro())
                     .data("solicitacoes", solicitacoes)
                     .data("mensagem", "Solicitação enviada com sucesso!")
                     .data("descricaoPreenchida", "")
                     .data("valorPreenchido", "");
         } catch (Exception ex) {
-            Membro m = obterMembro();
             List<SolicitacaoReembolso> solicitacoes = service.listarUltimasPorMembro(membroId);
             return solicitarReembolso
 
-                    .data("username", m.nome)
+                    .data("username", obterNomeMembro())
                     .data("solicitacoes", solicitacoes)
                     .data("mensagem", "Erro ao enviar: " + ex.getMessage())
                     .data("descricaoPreenchida", descricao)
@@ -244,27 +238,51 @@ public class SolicitacaoReembolsoQuteResource {
     }
 
     private String obterNomeMembro() {
-        Membro m = obterMembro();
+    Membro m = obterMembro();
         return m.nome;
     }
 
     @POST
-    @Path("/{id}/executar")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Path("/executar")
+    @Blocking
     @Transactional
-    public Response executarPagamento(
-            @PathParam("id") Long id) {
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    public TemplateInstance executar(@FormParam("id") Long id) {
+        Membro m = obterMembro();
+        service.processarPagamento(id, m, SolicitacaoReembolso.Status.CONCLUIDA, null);
 
-        SolicitacaoReembolso s = service.buscarPorId(id);
-        if (s == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+        List<SolicitacaoReembolso> pendentes = service.listarPendentes();
+        return aprovarRejeitarSolicitacao.data("pendentes", pendentes)
+                .data("username", obterNomeMembro())
+                .data("msg", "Solicitação concluída.")
+                .data("erro", null)
+                .data("rejeitarId", null);
+    }
+
+    @POST
+    @Path("/rejeitar-pagamento")
+    @Blocking
+    @Transactional
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    public TemplateInstance rejeitarPagamento(@FormParam("id") Long id, @FormParam("justificativa") String justificativa) {
+        if (justificativa == null || justificativa.trim().isEmpty()) {
+            List<SolicitacaoReembolso> aguardandoAprovacao = service.listarAguardandoPagamento();
+            return efetivarPagamento
+                    .data("aguardandoAprovacao", aguardandoAprovacao)
+                    .data("username", obterNomeMembro())
+                    .data("msg", null)
+                    .data("erro", "Justificativa obrigatória para rejeição") 
+                    .data("rejeitarId", null);
         }
         Membro m = obterMembro();
-        service.processarPagamento(id, m, SolicitacaoReembolso.Status.CONCLUIDA);
-
-        // Redirecionamento
-        return Response
-                .seeOther(java.net.URI.create("/solicitar-reembolso"))
-                .build();
+        service.processarPagamento(id, m, SolicitacaoReembolso.Status.PAGAMENTO_REJEITADO, justificativa);
+        List<SolicitacaoReembolso> pendentes = service.listarPendentes();
+        return aprovarRejeitarSolicitacao.data("pendentes", pendentes)
+                .data("username", obterNomeMembro())
+                .data("msg", "Solicitação rejeitada.")
+                .data("erro", null)
+                .data("rejeitarId", null);
     }
 }

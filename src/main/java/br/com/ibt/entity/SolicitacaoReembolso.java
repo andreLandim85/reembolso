@@ -20,6 +20,7 @@ public class SolicitacaoReembolso extends PanacheEntity {
     public Double valor;
     public Status status = Status.PENDENTE;
     public String justificativa;
+    public String justificativaTesoureiro;
     public String chavePix;
     public LocalDateTime dataCriacao = LocalDateTime.now();
     @ManyToOne
@@ -31,6 +32,7 @@ public class SolicitacaoReembolso extends PanacheEntity {
     public Membro tesoureiroAprovador;
 
     public LocalDateTime dataAprovacao;
+    public LocalDateTime dataAprovacaoTesoureiro;
     public String tipoChave;
     @Lob
     public byte[] notaFiscal; // armazena o arquivo binário
@@ -63,6 +65,11 @@ public class SolicitacaoReembolso extends PanacheEntity {
     public String getDataAprovacaoFormatada() {
         if (dataAprovacao == null) return "";
         return dataAprovacao.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    public String getDataAprovacaoTesoureiroFormatada() {
+        if (dataAprovacaoTesoureiro == null) return "";
+        return dataAprovacaoTesoureiro.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 
     public enum Status {
