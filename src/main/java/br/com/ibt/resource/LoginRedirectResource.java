@@ -5,20 +5,19 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.*;
 import io.quarkus.security.Authenticated;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Path("/")
 public class LoginRedirectResource {
@@ -64,5 +63,15 @@ public class LoginRedirectResource {
         );
         // Redireciona para o logout do Cognito
         return Response.seeOther(URI.create(cognitoLogoutUrl)).build();
+    }
+
+
+    @GET
+    @Path("/debug/headers")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String showHeaders(@Context HttpHeaders headers) {
+        return headers.getRequestHeaders().entrySet().stream()
+                .map(entry -> entry.getKey() + ": " + entry.getValue())
+                .collect(Collectors.joining("\n"));
     }
 }
